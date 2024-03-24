@@ -2,6 +2,7 @@ import Nat32 "mo:base/Nat32";
 import Text "mo:base/Text";
 import List "mo:base/List";
 import Trie "mo:base/Trie";
+import Error "mo:base/Error";
 
 
 actor{
@@ -28,7 +29,12 @@ actor{
     return {hash = x; key = x};
   };
 
-  //crear objeto Blog + almacenamiento
+  //Creando tipo error
+  public type ups = {
+    msg: Text
+    };
+
+  //crear objeto Blog + almacenamiento desde 0. solo para testing
   public func crearBlog(blog : blog_Obj) : async blog_Id{
     
     //Generar nuevo ID
@@ -45,13 +51,84 @@ actor{
     return blog_Id;
   };
 
+  public func blogNormal(usuario: Text, contenido: Text): async blog_Id{
+    let blog ={
+      usuario = usuario;
+      contenido = contenido;
+      //casting para que no exista problema de conversion de Nat32 ya que 0 es Nat
+      likes = Nat32.fromNat(0);
+      comentarios = List.nil<Text>();
+    };
+
+    let blogId = await crearBlog(blog);
+    return blogId;
+  };
+
   //Ver un blog
   public query func verBlogs(blog_Id: blog_Id): async ?blog_Obj{
     let resultado = Trie.find(blogAlmacen, key(blog_Id),Nat32.equal);
     return resultado;   
-  }
+  };
 
-  
+  //eliminar un blog
+  public func eliminarBlog(blogId: blog_Id): async ?ups {
+    let resultado = Trie.remove(blogAlmacen, key(blogId), Nat32.equal);
+    //.0 es el nuevo resultado, .1 sera el eliminado y en caso de no existir = null
+    switch(resultado.1)
+    {
+      case (null)
+      {
+        return ?{msg = "Blog no encontrado"};
+      };
+
+      case (_)
+      {
+        blogAlmacen := resultado.0;
+        return ?{msg = "Blog eliminado"};
+      }
+    }
+  };
+
+
+  //dar un like a un blog
+  public func like(blog_Id: blog_Id): async ?blog_Obj{
+    await actualizarLikes(blog_Id);
+  };
+
+  private func actualizarLikes(blogId: blog_Id): async ?blog_Obj{
+    let blog = await verBlogs(blogId);
+    //sitch para recibir nulo u objeto
+    switch (blog)
+    {
+      case (null)
+      {
+        throw Error.reject("Blog no encontrado");
+      };
+
+      case(?blogObjt)
+      {
+        let nuevoLike = blogObjt.likes +1;
+        // no se puede hacer esto: blogObjt.likes = nuevoLike;
+        // se debe crear un nuevo objeto con las nuevas propiedades
+        let ObjBlogActualizado ={
+          usuario = blogObjt.usuario;
+          contenido = blogObjt.contenido;
+          likes = nuevoLike;
+          comentarios = blogObjt.comentarios;
+        };
+
+        //remplazando los valores actualizados
+        blogAlmacen := Trie.replace(
+          blogAlmacen,
+          key(blogId),
+          Nat32.equal,
+          ?ObjBlogActualizado,
+        ).0;
+
+        return ?ObjBlogActualizado;
+      };
+    } 
+  };
 };
 
 
