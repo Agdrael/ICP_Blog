@@ -3,7 +3,7 @@ import Text "mo:base/Text";
 import List "mo:base/List";
 import Trie "mo:base/Trie";
 import Error "mo:base/Error";
-
+import Nat "mo:base/Nat";
 
 actor{
   //estableciendo blog_id como nat
@@ -24,8 +24,7 @@ actor{
   private stable var blogAlmacen: Trie.Trie<blog_Id,blog_Obj> = Trie.empty();
 
   //Creando llave para el Trie
-  private func key(x: blog_Id) : Trie.Key<blog_Id>
-  {
+  private func key(x: blog_Id) : Trie.Key<blog_Id>{
     return {hash = x; key = x};
   };
 
@@ -35,6 +34,7 @@ actor{
     };
 
   //crear objeto Blog + almacenamiento desde 0. solo para testing
+  
   public func crearBlog(blog : blog_Obj) : async blog_Id{
     
     //Generar nuevo ID
@@ -65,11 +65,54 @@ actor{
     return blogId;
   };
 
+  public func cambioVerBlogs(numero: Nat): async ?blog_Obj{
+    let conversion = Nat32.fromNat(numero);
+    await verBlogs(conversion);  
+};
+  
   //Ver un blog
   public query func verBlogs(blog_Id: blog_Id): async ?blog_Obj{
     let resultado = Trie.find(blogAlmacen, key(blog_Id),Nat32.equal);
     return resultado;   
   };
+
+  
+  //actualizar un blog
+  public func actualizarContenido(blogId: blog_Id, nuevoContenido: Text): async ?ups {
+    // Buscar el blog en el almacén
+    let blog = await verBlogs(blogId);
+
+    // Si el blog no existe, retornar un error
+    switch (blog) {
+      case (null){
+          return ?{msg = "Blog no encontrado"};
+      };
+        
+      case (?blogObj){
+         // Crear un nuevo objeto blog con el contenido actualizado
+        let blogActualizado = {
+          usuario = blogObj.usuario;
+          contenido = nuevoContenido;
+          likes = blogObj.likes;
+          comentarios = blogObj.comentarios;
+        };
+
+        // Reemplazar el blog en el almacén con el nuevo contenido
+        blogAlmacen := Trie.replace(
+          blogAlmacen,
+          key(blogId),
+          Nat32.equal,
+          ?blogActualizado,
+        ).0;
+
+        // Retornar un mensaje de éxito
+        return ?{msg = "Contenido del blog actualizado"};
+      }
+
+       
+    }
+  };
+
 
   //eliminar un blog
   public func eliminarBlog(blogId: blog_Id): async ?ups {
@@ -130,6 +173,51 @@ actor{
       };
     } 
   };
+
+
+   // agregar un comentario a un blog
+  public func agregarComentario(blogId: blog_Id, comentario: Text): async ?ups {
+    
+    // Buscar el blog en el almacén
+    let blog = await verBlogs(blogId);
+
+    // Si el blog no existe, retornar un error
+    switch (blog) {
+      case (null){
+        return ?{msg = "Blog no encontrado"};
+      };
+
+      case (?blogObj){
+
+        // Crear una lista con el nuevo comentario
+        let nuevoComentarioLista = List.push(comentario, blogObj.comentarios);
+
+        // Crear un nuevo objeto blog con la lista de comentarios actualizada
+        let blogActualizado = {
+          usuario = blogObj.usuario;
+          contenido = blogObj.contenido;
+          likes = blogObj.likes;
+          comentarios = nuevoComentarioLista;
+        };
+
+        // Reemplazar el blog en el almacén con el nuevo contenido
+        blogAlmacen := Trie.replace(
+          blogAlmacen,
+          key(blogId),
+          Nat32.equal,
+          ?blogActualizado,
+        ).0;
+
+        // Retornar un mensaje de éxito
+        return ?{msg = "Comentario agregado al blog"};
+      }
+
+        
+    }
+  };
+
+  
+
 };
 
 

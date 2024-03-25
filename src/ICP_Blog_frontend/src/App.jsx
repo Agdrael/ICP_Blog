@@ -1,13 +1,25 @@
-import { useState } from 'react';
-import { ICP_Blog_backend } from 'declarations/ICP_Blog_backend';
 import BlogForm from './BlogForm';
+import MostrarForm from './MostrarForm';
+import ActualizarForm from './ActualizarFrom';
+import EliminarForm from './EliminarForm';
+import Like from './likeform';
+import Comentario from './Comentario';
 
 function App() {
   return (
     <div>
-      <h1>Crear nuevo blog</h1>
+      <h2>Crear nuevo blog</h2>
       <BlogForm />
-      <h2>Form creados</h2>
+      <h2>Buscar blog</h2>
+      <MostrarForm />
+      <h2>Actualizar blog</h2>
+      <ActualizarForm />
+      <h2>Eliminar blog</h2>
+      <EliminarForm />
+      <h2>Dar Like</h2>
+      <Like />
+      <h2>Agregar comentario</h2>
+      <Comentario />
     </div>
   );
 }
