@@ -51,6 +51,7 @@ actor{
     return blog_Id;
   };
 
+//Blog de usuarios normales
   public func blogNormal(usuario: Text, contenido: Text): async blog_Id{
     let blog ={
       usuario = usuario;
