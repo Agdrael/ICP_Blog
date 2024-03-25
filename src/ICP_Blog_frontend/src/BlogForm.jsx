@@ -11,7 +11,7 @@ function BlogForm() {
       const contenido = event.target.elements.contenido.value;
 
       //Llamando back end luego asignarlo a una promesa
-      ICP_Blog_backend.crearBlog(usuario,contenido).then((blog) =>{
+      ICP_Blog_backend.blogNormal(usuario,contenido).then((blog) =>{
         setBlog(blog);
       });
       return false;
@@ -24,12 +24,13 @@ function BlogForm() {
           <input id="usuario" alt="Usuario" type="text"/>
         </div>
         <div>
-          <label>
-            Contenido: 
-          </label>
+          <label>Contenido:</label>
          <textarea id="contenido" alt="Contenido"></textarea>
         </div>
-        <button type="submit">Publicar</button>
+        <div>
+          <button type="submit">Crear</button>
+        </div>
+        
       </form>
     );
   }
