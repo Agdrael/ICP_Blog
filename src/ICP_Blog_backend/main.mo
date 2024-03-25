@@ -5,41 +5,41 @@ import Trie "mo:base/Trie";
 import Error "mo:base/Error";
 import Nat "mo:base/Nat";
 
-actor{
+actor {
   //estableciendo blog_id como nat
   public type blog_Id = Nat32;
-  
+
   //asegurandose que empiece en 0
-  private stable var next: blog_Id =0;
+  private stable var next : blog_Id = 0;
 
   //definir objeto tipo blog
-  public type blog_Obj ={
-    usuario: Text;
-    contenido: Text;
-    likes: Nat32;
-    comentarios: List.List<Text>;
+  public type blog_Obj = {
+    usuario : Text;
+    contenido : Text;
+    likes : Nat32;
+    comentarios : List.List<Text>;
   };
 
   //creando tabla hash para almacenar los blogs
-  private stable var blogAlmacen: Trie.Trie<blog_Id,blog_Obj> = Trie.empty();
+  private stable var blogAlmacen : Trie.Trie<blog_Id, blog_Obj> = Trie.empty();
 
   //Creando llave para el Trie
-  private func key(x: blog_Id) : Trie.Key<blog_Id>{
-    return {hash = x; key = x};
+  private func key(x : blog_Id) : Trie.Key<blog_Id> {
+    return { hash = x; key = x };
   };
 
   //Creando tipo error
   public type ups = {
-    msg: Text
-    };
+    msg : Text;
+  };
 
   //crear objeto Blog + almacenamiento desde 0. solo para testing
-  
-  public func crearBlog(blog : blog_Obj) : async blog_Id{
-    
+
+  public func crearBlog(blog : blog_Obj) : async blog_Id {
+
     //Generar nuevo ID
     let blog_Id = next;
-    next +=1;
+    next += 1;
 
     //almacenando un nuevo blog
     blogAlmacen := Trie.replace(
@@ -51,9 +51,9 @@ actor{
     return blog_Id;
   };
 
-//Blog de usuarios normales
-  public func blogNormal(usuario: Text, contenido: Text): async blog_Id{
-    let blog ={
+  //Blog de usuarios normales
+  public func blogNormal(usuario : Text, contenido : Text) : async blog_Id {
+    let blog = {
       usuario = usuario;
       contenido = contenido;
       //casting para que no exista problema de conversion de Nat32 ya que 0 es Nat
@@ -65,31 +65,30 @@ actor{
     return blogId;
   };
 
-  public func cambioVerBlogs(numero: Nat): async ?blog_Obj{
+  public func cambioVerBlogs(numero : Nat) : async ?blog_Obj {
     let conversion = Nat32.fromNat(numero);
-    await verBlogs(conversion);  
-};
-  
-  //Ver un blog
-  public query func verBlogs(blog_Id: blog_Id): async ?blog_Obj{
-    let resultado = Trie.find(blogAlmacen, key(blog_Id),Nat32.equal);
-    return resultado;   
+    await verBlogs(conversion);
   };
 
-  
+  //Ver un blog
+  public query func verBlogs(blog_Id : blog_Id) : async ?blog_Obj {
+    let resultado = Trie.find(blogAlmacen, key(blog_Id), Nat32.equal);
+    return resultado;
+  };
+
   //actualizar un blog
-  public func actualizarContenido(blogId: blog_Id, nuevoContenido: Text): async ?ups {
+  public func actualizarContenido(blogId : blog_Id, nuevoContenido : Text) : async ?ups {
     // Buscar el blog en el almacén
     let blog = await verBlogs(blogId);
 
     // Si el blog no existe, retornar un error
     switch (blog) {
-      case (null){
-          return ?{msg = "Blog no encontrado"};
+      case (null) {
+        return ?{ msg = "Blog no encontrado" };
       };
-        
-      case (?blogObj){
-         // Crear un nuevo objeto blog con el contenido actualizado
+
+      case (?blogObj) {
+        // Crear un nuevo objeto blog con el contenido actualizado
         let blogActualizado = {
           usuario = blogObj.usuario;
           contenido = nuevoContenido;
@@ -106,55 +105,46 @@ actor{
         ).0;
 
         // Retornar un mensaje de éxito
-        return ?{msg = "Contenido del blog actualizado"};
-      }
-
-       
-    }
-  };
-
-
-  //eliminar un blog
-  public func eliminarBlog(blogId: blog_Id): async ?ups {
-    let resultado = Trie.remove(blogAlmacen, key(blogId), Nat32.equal);
-    //.0 es el nuevo resultado, .1 sera el eliminado y en caso de no existir = null
-    switch(resultado.1)
-    {
-      case (null)
-      {
-        return ?{msg = "Blog no encontrado"};
+        return ?{ msg = "Contenido del blog actualizado" };
       };
 
-      case (_)
-      {
-        blogAlmacen := resultado.0;
-        return ?{msg = "Blog eliminado"};
-      }
-    }
+    };
   };
 
+  //eliminar un blog
+  public func eliminarBlog(blogId : blog_Id) : async ?ups {
+    let resultado = Trie.remove(blogAlmacen, key(blogId), Nat32.equal);
+    //.0 es el nuevo resultado, .1 sera el eliminado y en caso de no existir = null
+    switch (resultado.1) {
+      case (null) {
+        return ?{ msg = "Blog no encontrado" };
+      };
+
+      case (_) {
+        blogAlmacen := resultado.0;
+        return ?{ msg = "Blog eliminado" };
+      };
+    };
+  };
 
   //dar un like a un blog
-  public func like(blog_Id: blog_Id): async ?blog_Obj{
+  public func like(blog_Id : blog_Id) : async ?blog_Obj {
     await actualizarLikes(blog_Id);
   };
 
-  private func actualizarLikes(blogId: blog_Id): async ?blog_Obj{
+  private func actualizarLikes(blogId : blog_Id) : async ?blog_Obj {
     let blog = await verBlogs(blogId);
     //sitch para recibir nulo u objeto
-    switch (blog)
-    {
-      case (null)
-      {
+    switch (blog) {
+      case (null) {
         throw Error.reject("Blog no encontrado");
       };
 
-      case(?blogObjt)
-      {
+      case (?blogObjt) {
         let nuevoLike = blogObjt.likes +1;
         // no se puede hacer esto: blogObjt.likes = nuevoLike;
         // se debe crear un nuevo objeto con las nuevas propiedades
-        let ObjBlogActualizado ={
+        let ObjBlogActualizado = {
           usuario = blogObjt.usuario;
           contenido = blogObjt.contenido;
           likes = nuevoLike;
@@ -171,23 +161,22 @@ actor{
 
         return ?ObjBlogActualizado;
       };
-    } 
+    };
   };
 
+  // agregar un comentario a un blog
+  public func agregarComentario(blogId : blog_Id, comentario : Text) : async ?ups {
 
-   // agregar un comentario a un blog
-  public func agregarComentario(blogId: blog_Id, comentario: Text): async ?ups {
-    
     // Buscar el blog en el almacén
     let blog = await verBlogs(blogId);
 
     // Si el blog no existe, retornar un error
     switch (blog) {
-      case (null){
-        return ?{msg = "Blog no encontrado"};
+      case (null) {
+        return ?{ msg = "Blog no encontrado" };
       };
 
-      case (?blogObj){
+      case (?blogObj) {
 
         // Crear una lista con el nuevo comentario
         let nuevoComentarioLista = List.push(comentario, blogObj.comentarios);
@@ -209,15 +198,10 @@ actor{
         ).0;
 
         // Retornar un mensaje de éxito
-        return ?{msg = "Comentario agregado al blog"};
-      }
+        return ?{ msg = "Comentario agregado al blog" };
+      };
 
-        
-    }
+    };
   };
 
-  
-
 };
-
-

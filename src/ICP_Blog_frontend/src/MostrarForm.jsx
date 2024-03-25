@@ -9,10 +9,7 @@ function MostrarForm() {
         //Llamando back end luego asignarlo a una promesa
         ICP_Blog_backend.cambioVerBlogs(id).then((blog) => {
             setBlog(blog);
-            console.log("Usuario:", blog.usuario); // Agregar console.log para imprimir el usuario
-            console.log("Contenido:", blog.contenido); // Agregar console.log para imprimir el contenido
-            console.log("Likes:", blog.likes); // Agregar console.log para imprimir los likes
-       
+            console.log(blog);
         });
         return false;
     };
@@ -31,9 +28,25 @@ function MostrarForm() {
 
             {blog && (
                 <div>
-                    <pre>{JSON.stringify(blog, null, 2)}</pre>
+                    {blog.map((blogItem, index) => (
+                        <div key={index}>
+                            <p>Usuario: {blogItem.usuario}</p>
+                            <p>Contenido: {blogItem.contenido}</p>
+                            <p>Likes: {blogItem.likes}</p>
+
+                            {/* Generar cada comentario */}
+                            <div>
+                                {blogItem.comentarios && blogItem.comentarios.map((comentario, comentarioIndex) => (
+                                    <p key={comentarioIndex}>Comentario {comentarioIndex + 1}: {comentario}+","</p>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
+
+
+
 
         </div>
     );
